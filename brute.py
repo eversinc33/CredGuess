@@ -45,7 +45,7 @@ def get_users(con, user_dn, password, domain, ou) -> List[LdapUser]:
     except Exception as error:
         print(error)
 
-return results
+    return results
 
 def main():
     parser = argparse.ArgumentParser(
@@ -98,7 +98,7 @@ def main():
                 password = args.mask.replace("Word", seasons[2])
             if month > 9:
                 password = args.mask.replace("Word", seasons[3])
-	else: # mode == month
+        else: # mode == month
             password = args.mask.replace("Word", months[month])
 
         password = password.replace("YYYY", year)
