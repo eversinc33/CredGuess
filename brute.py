@@ -90,7 +90,7 @@ def main():
         year = str(ts.strftime('%Y'))
 
         if args.mode == "season":
-            if month >= 3 && <= 5:
+            if month >= 3 and month <= 5:
                 password = args.mask.replace("Word", seasons[0])
             if month >= 6 and month <= 8:
                 password = args.mask.replace("Word", seasons[1])
