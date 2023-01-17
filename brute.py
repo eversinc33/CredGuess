@@ -1,18 +1,33 @@
 #!/usr/bin/python3
-import ldap, argparse, sys
+import ldap, argparse, sys, datetime
+from typing import List
 
-def get_users(con, user_dn, password, domain):
+class LdapUser:
+    def __init__(dn, samAccountName, pwdLastSet):
+        self.dn = dn
+        self.samAccountName = samAccountName
+        self.pwdLastSet = pwdLastSet
+
+def ad_timestamp_to_unix(timestamp):
+    if timestamp != 0:
+        return datetime.datetime(1601, 1, 1) + datetime.timedelta(seconds=timestamp/10000000)
+    return np.nan
+
+def get_users(con, user_dn, password, domain) -> List[LdapUser]:
+    results = []
 
     attributes = ['samAccountName', 'pwdLastSet']
-    domain_cn = [f"DC={x}," for x in domain.split('.')][:-1]
+    domain_cn = "".join([f"DC={x}," for x in domain.split('.')])[:-1]
 
     try:
         con.simple_bind_s(user_dn, password)
-        res = con.search_s(f"CN=Users,{domain_cn}", ldap.SCOPE_SUBTREE, '(objectClass=User)', attributes)
+        res = con.search_s(f"{domain_cn}", ldap.SCOPE_SUBTREE, '(&(objectClass=User)(objectCategory=Person))', attributes)
         for dn, entry in res:
-            print(dn)
+            results.append(Ldapuser(dn, entry.get("samAccountName"), entry.get("pwdLastSet")))
     except Exception as error:
         print(error)
+        
+    return results
 
 def main():
     parser = argparse.ArgumentParser(
@@ -32,9 +47,11 @@ def main():
     password = args.password
     domain = user_dn.split('@')[1:]
     protocol = "ldaps" if args.ssl else "ldap"
-    con = ldap.initialize(f'{protocol}://{dc}')
+    con = ldap.initialize(f'{protocol}://{args.dc_ip}')
 
-    get_users(con, user_dn, password, domain)
+    users = get_users(con, user_dn, password, domain)
 
+    # TODO: get pw according to pw last set
+    
 if __name__ == "__main__":
     main()
