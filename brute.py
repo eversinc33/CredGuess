@@ -2,6 +2,24 @@
 import ldap, argparse, sys, datetime
 from typing import List
 
+# TODO: more languages, read from json file
+months = {
+    1: "Januar",
+    2: "Februar",
+    3: "März",
+    4: "April",
+    5: "Mai",
+    6: "Juni",
+    7: "Juli",
+    8: "August",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Dezember"
+}
+
+seasons = ["Frühling", "Sommer", "Herbst", "Winter"]
+
 class LdapUser:
     def __init__(dn, samAccountName, pwdLastSet):
         self.dn = dn
@@ -36,13 +54,19 @@ def main():
     )
 
     # TODO: anonymous bind
+    parser.add_argument("mode", help="season or month", required=True)
+    parser.add_argument("mask", help="mask to generate the pw, e.g. WordYY, WordYYYY!, Word#YYYY, where Word will be replaced by season or month", required=True)
     parser.add_argument('-u', '--username', metavar="username@domain.local", type=str, required=True)
     parser.add_argument('-p', '--password', metavar="<Password>", type=str, required=True)
     parser.add_argument('--ssl', action="store_true", default=False)
     parser.add_argument('--dc-ip', metavar="<DC IP or FQDN>", type=str, required=True)
     parser.add_argument('--ou', metavar="OU=Users,OU=Berlin", default="" type=str, required=True)
-
+    
     args = parser.parse_args()
+    
+    if args.mode not in ["season", "month"]:
+        print("[!] Invalid mode")
+        sys.exit(1)
 
     user_dn = args.username
     password = args.password
@@ -57,6 +81,30 @@ def main():
     users = get_users(con, user_dn, password, domain, ou)
 
     # TODO: get pw according to pw last set
-    
+    for user in users:
+        month = int(datetime.datetime.fromtimestamp(
+                int(ad_timestamp_to_unix(user.pwdLastSet))
+            ).strftime('%m')
+        ))
+        year = str(datetime.datetime.fromtimestamp(
+                int(ad_timestamp_to_unix(user.pwdLastSet))
+            ).strftime('%Y')
+        ))
+        
+        if args.mode == "season":
+            if month <= 3:
+                password = args.mask.replace("Word", seasons[0])
+            if month > 3 and month <= 6:
+                password = args.mask.replace("Word", seasons[1])
+            if month > 6 and month <= 9:
+                password = args.mask.replace("Word", seasons[2])
+            if month > 9:
+                password = args.mask.replace("Word", seasons[3])
+        else: # mode == month
+            password = args.mask.replace("Word", months[month])
+        password = password.replace("YY", year[-2:])
+        password = password.replace("YYYY", year)
+        print(f"{user.samAccountName}:{password}")
+               
 if __name__ == "__main__":
     main()
