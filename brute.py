@@ -37,10 +37,6 @@ seasons_german = ["Frühling", "Sommer", "Herbst", "Winter"]
 seasons_english = ["Spring", "Summer", "Autumn", "Winter"]
 seasons_american = ["Spring", "Summer", "Fall", "Winter"]
 
-# Defaults
-months = months_german 
-seasons = seasons_german
-
 class LdapUser:
     def __init__(self, dn, samAccountName, pwdLastSet):
         self.dn = dn
@@ -99,9 +95,12 @@ def main():
     if args.language == "english":
         months = months_english
         seasons = seasons_english
-    else if args.language == "american":
+    elif args.language == "american":
         months = months_english
         seasons = seasons_english
+    else:
+        months = months_german
+        seasons = seasons_german
 
     user_dn = args.username
     password = args.password
@@ -141,8 +140,8 @@ def main():
 
         print(f"{user.samAccountName}:{password}")
 
-        if args.outfile != "":
-            with open(args.outfile, 'a+') as f:
+        if args.o != "":
+            with open(args.o, 'a+') as f:
                 f.write(f"{user.samAccountName}:{password}")
 
 if __name__ == "__main__":
