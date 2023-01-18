@@ -2,8 +2,8 @@
 import ldap, argparse, sys, datetime
 from typing import List
 
-# TODO: more languages, read from json file
-months = {
+# TODO: read from json
+months_german = {
     1: "Januar",
     2: "Februar",
     3: "März",
@@ -18,7 +18,28 @@ months = {
     12: "Dezember"
 }
 
-seasons = ["Frühling", "Sommer", "Herbst", "Winter"]
+months_english = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December"
+}
+
+seasons_german = ["Frühling", "Sommer", "Herbst", "Winter"]
+seasons_english = ["Spring", "Summer", "Autumn", "Winter"]
+seasons_american = ["Spring", "Summer", "Fall", "Winter"]
+
+# Defaults
+months = months_german 
+seasons = seasons_german
 
 class LdapUser:
     def __init__(self, dn, samAccountName, pwdLastSet):
@@ -26,7 +47,10 @@ class LdapUser:
         self.samAccountName = samAccountName[0].decode('utf-8')
         self.pwdLastSet = int(pwdLastSet[0])
 
-def ad_timestamp_to_unix(timestamp):
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+def ad_timestamp_to_datetime(timestamp):
     if timestamp != 0:
         return datetime.datetime(1601, 1, 1) + datetime.timedelta(seconds=timestamp/10000000)
     return None
@@ -43,7 +67,9 @@ def get_users(con, user_dn, password, domain, ou) -> List[LdapUser]:
         for dn, entry in res:
             results.append(LdapUser(dn, entry.get("sAMAccountName"), entry.get("pwdLastSet")))
     except Exception as error:
-        print(error)
+        eprint(error)
+        if ou == "":
+            eprint("[!] Try specifying an OU with --ou")
 
     return results
 
@@ -60,13 +86,22 @@ def main():
     parser.add_argument('-p', '--password', metavar="<Password>", type=str, required=True)
     parser.add_argument('--ssl', action="store_true", default=False)
     parser.add_argument('--dc-ip', metavar="<DC IP or FQDN>", type=str, required=True)
-    parser.add_argument('--ou', metavar="OU=Users,OU=Berlin", default="", type=str, required=True)
+    parser.add_argument('--ou', metavar="OU=Users,OU=Berlin", default="", type=str)
+    parser.add_argument('-o', metavar="<Outfile>", default="", type=str)
+    parser.add_argument('--language', metavar="<english, american or german>", default="german", type=str)
 
     args = parser.parse_args()
 
     if args.mode not in ["season", "month"]:
-        print("[!] Invalid mode")
+        eprint("[!] Invalid mode")
         sys.exit(1)
+
+    if args.language == "english":
+        months = months_english
+        seasons = seasons_english
+    else if args.language == "american":
+        months = months_english
+        seasons = seasons_english
 
     user_dn = args.username
     password = args.password
@@ -81,7 +116,7 @@ def main():
     users = get_users(con, user_dn, password, domain, ou)
 
     for user in users:
-        ts = ad_timestamp_to_unix(user.pwdLastSet)
+        ts = ad_timestamp_to_datetime(user.pwdLastSet)
 
         if ts == None:
             continue
@@ -105,6 +140,10 @@ def main():
         password = password.replace("YY", year[-2:])
 
         print(f"{user.samAccountName}:{password}")
+
+        if args.outfile != "":
+            with open(args.outfile, 'a+') as f:
+                f.write(f"{user.samAccountName}:{password}")
 
 if __name__ == "__main__":
     main()
