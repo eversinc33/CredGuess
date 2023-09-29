@@ -61,11 +61,13 @@ def get_users(con, user_dn, password, domain, ou) -> List[LdapUser]:
         con.simple_bind_s(user_dn, password)
         res = con.search_s(f"{ou}{domain_cn}", ldap.SCOPE_SUBTREE, '(&(objectClass=User)(objectCategory=Person))', attributes)
         for dn, entry in res:
+            # print(entry)
             results.append(LdapUser(dn, entry.get("sAMAccountName"), entry.get("pwdLastSet")))
     except Exception as error:
-        eprint(error)
-        if ou == "":
-            eprint("[!] Try specifying an OU with --ou")
+        pass
+
+    if results == [] and ou == "":
+        eprint("[!] Try specifying an OU with --ou")
 
     return results
 
