@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# coding=utf-8
+
 import ldap, argparse, sys, datetime
 from typing import List
 
