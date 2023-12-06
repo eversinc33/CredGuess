@@ -7,7 +7,7 @@ from typing import List
 months_german = {
     1: "Januar",
     2: "Februar",
-    3: "März",
+    3: "Maerz",
     4: "April",
     5: "Mai",
     6: "Juni",
@@ -34,7 +34,7 @@ months_english = {
     12: "December"
 }
 
-seasons_german = ["Frühling", "Sommer", "Herbst", "Winter"]
+seasons_german = ["Fruehling", "Sommer", "Herbst", "Winter"]
 seasons_english = ["Spring", "Summer", "Autumn", "Winter"]
 seasons_american = ["Spring", "Summer", "Fall", "Winter"]
 
