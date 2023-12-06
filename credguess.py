@@ -4,7 +4,6 @@
 import ldap, argparse, sys, datetime
 from typing import List
 
-# TODO: read from json
 months_german = {
     1: "Januar",
     2: "Februar",
@@ -146,7 +145,7 @@ def main():
 
         if args.o != "":
             with open(args.o, 'a+') as f:
-                f.write(f"{user.samAccountName}:{password}")
+                f.write(f"{user.samAccountName}:{password}\n")
 
 if __name__ == "__main__":
     main()
